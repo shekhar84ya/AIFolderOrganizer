@@ -15,12 +15,26 @@ def main():
     )
 
     st.title("🤖 AI-Powered File Organizer")
-    
-    # API Key Input
+
+    # API Key Input with improved error handling
     api_key = st.text_input("Enter Gemini AI API Key", type="password")
     if api_key:
-        if not validate_api_key(api_key):
-            st.error("Invalid API key")
+        is_valid, error_message = validate_api_key(api_key)
+        if not is_valid:
+            st.error(error_message)
+            st.markdown("""
+            ### Local Setup Instructions:
+            1. Install required packages:
+            ```bash
+            pip install streamlit google-generativeai schedule
+            ```
+            2. Ensure you have Python 3.11 installed
+            3. Get your API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+            4. Run the app:
+            ```bash
+            streamlit run file_organizer.py
+            ```
+            """)
             return
 
     # Initialize session state
@@ -45,27 +59,27 @@ def main():
             folder_path = st.text_input(f"Folder Path #{i+1}", key=f"folder_{i}")
         with col2:
             instructions = st.text_area(f"Instructions #{i+1}", 
-                                     placeholder="e.g., Categorize PDF files by subject",
-                                     key=f"instructions_{i}")
+                                    placeholder="e.g., Categorize PDF files by subject",
+                                    key=f"instructions_{i}")
         folders_data.append((folder_path, instructions))
 
     # Scheduling options
     st.subheader("📅 Scheduling")
     schedule_type = st.selectbox("Schedule Type", 
-                               ["Run Once", "Hourly", "Daily", "Weekly"])
-    
+                              ["Run Once", "Hourly", "Daily", "Weekly"])
+
     if schedule_type != "Run Once":
         if schedule_type == "Hourly":
             schedule_time = st.number_input("Run every N hours", 
-                                          min_value=1, max_value=23, value=1)
+                                        min_value=1, max_value=23, value=1)
         elif schedule_type == "Daily":
             schedule_time = st.time_input("Select time")
         else:  # Weekly
             col1, col2 = st.columns(2)
             with col1:
                 day = st.selectbox("Select day", 
-                                 ["Monday", "Tuesday", "Wednesday", "Thursday",
-                                  "Friday", "Saturday", "Sunday"])
+                                ["Monday", "Tuesday", "Wednesday", "Thursday",
+                                 "Friday", "Saturday", "Sunday"])
             with col2:
                 time = st.time_input("Select time")
             schedule_time = (day, time)
@@ -91,21 +105,21 @@ def main():
         def process_folders():
             for folder_path, instructions in valid_pairs:
                 status_text.text(f"Processing folder: {folder_path}")
-                
+
                 # Get file listing
                 files_info = file_ops.get_directory_info(folder_path)
-                
+
                 # Get AI suggestions
                 try:
                     commands = ai_handler.get_organization_commands(
                         files_info, instructions)
-                    
+
                     # Execute commands
                     for cmd in commands:
                         status = file_ops.execute_command(cmd, folder_path)
                         st.write(f"Command: {cmd}")
                         st.write(f"Status: {'Success' if status else 'Failed'}")
-                        
+
                 except Exception as e:
                     st.error(f"Error processing folder {folder_path}: {str(e)}")
                     continue

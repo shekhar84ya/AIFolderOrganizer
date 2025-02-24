@@ -8,4 +8,5 @@ dependencies = [
     "schedule>=1.2.2",
     "sift-stack-py>=0.4.0",
     "streamlit>=1.42.2",
+    "twilio>=9.4.6",
 ]
